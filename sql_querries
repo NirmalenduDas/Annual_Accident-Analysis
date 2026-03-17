@@ -1,0 +1,122 @@
+create database traffic
+use traffic
+
+select * from indian_accident
+
+alter table indian_accident
+drop column `trafic_accident_severity`
+
+alter table indian_accident
+rename column `state/ut/city` to `state`;
+
+alter table indian_accident
+rename column `railway_accident_severity` to `railway_crossing_accident_severity`;
+
+-- =========================================
+-- BASIC INSIGHTS
+-- =========================================
+
+
+-- state with the highest no of accidents
+SELECT state, `total_traffic_accidents_-_cases`
+FROM indian_accident
+ORDER BY `total_traffic_accidents_-_cases` DESC
+LIMIT 1;
+-- state with highest road accidents cases
+SELECT state, `road_accidents_-_cases` as road_accidents
+FROM indian_accident
+ORDER BY `road_accidents_-_cases` DESC limit 1
+
+-- state with highest railway accident cases
+select state,`railway_accidents_-_cases` as railway_accidents 
+from indian_accident 
+order by`railway_accidents_-_cases` desc limit 1
+
+-- state with highest severity_index
+select state,`severity_index` from indian_accident 
+order by `severity_index` desc limit 1
+
+-- state with highest railway crossing accidents
+select state,`railway_crossing_accidents_-_cases` from indian_accident 
+order by `railway_crossing_accidents_-_cases` desc limit 1
+
+-- percentage of road accident cases out of total accidents
+select sum( `road_accidents_-_cases` ) /(select sum((`total_traffic_accidents_-_cases`)) from indian_accident  )
+as road_accident_percentage from indian_accident
+ 
+-- =========================================
+-- Comparative Analysis
+-- =========================================
+select * from indian_accident
+-- which transport causes more deaths
+
+WITH cte AS (
+    SELECT AVG(road_fatality_rate) AS deadly, 'road' AS mode_of_trans
+    FROM indian_accident
+
+    UNION ALL
+
+    SELECT AVG(railway_fatality_rate), 'railway'
+    FROM indian_accident
+
+    UNION ALL
+
+    SELECT AVG(railway_crossing_accident_severity), 'railway_crossing'
+    FROM indian_accident
+)
+
+SELECT mode_of_trans, deadly AS fatality_rate
+FROM cte
+ORDER BY deadly DESC
+LIMIT 1;
+
+-- which mode causes the highest no of deaths
+with cte1 as (
+select `road_accidents_-_died` as deaths, 'road' as mode_of_trans from indian_accident
+union all
+select `railway_crossing_accidents_-_died` , 'railway_crossing' from indian_accident
+union all
+select `railway_accidents_-_died` , 'railway' from indian_accident )
+
+select max(deaths) as no_of_deaths,mode_of_trans from cte1 
+group by mode_of_trans order by mode_of_trans desc limit 1
+
+-- =========================================
+-- Correlations
+-- =========================================
+
+-- top 5 states with high accident rates but with low fatality(with better health care services )
+SELECT state,`severity_index`
+FROM indian_accident
+WHERE `road_accidents_-_cases` > (
+    SELECT AVG(`road_accidents_-_cases`)
+    FROM indian_accident
+)
+AND `severity_index` < (
+    SELECT AVG(`severity_index`)
+    FROM indian_accident
+)
+order by `severity_index` desc limit 5;
+-- top 5 states with low accident rates but with high fatality( improvement in health service)
+
+SELECT state,`severity_index`
+FROM indian_accident
+WHERE `road_accidents_-_cases` < (
+    SELECT AVG(`road_accidents_-_cases`)
+    FROM indian_accident
+)
+AND `severity_index` > (
+    SELECT AVG(`severity_index`)
+    FROM indian_accident
+)
+order by `severity_index` desc limit 5;
+
+-- =========================================
+-- Future Predictions
+-- =========================================
+
+-- top 5 states with highest future severity
+select state,`future_severity` from indian_accident 
+order by `future_severity` desc limit 5
+
+
